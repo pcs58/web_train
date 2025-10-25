@@ -3,7 +3,10 @@ name: Deploy Vue app to GitHub Pages
 on:
   push:
     branches:
-      - main  # o la rama que uses para el despliegue
+      - main
+
+permissions:
+  contents: write   # 👈 NECESARIO para permitir el push a gh-pages
 
 jobs:
   build-and-deploy:
@@ -19,13 +22,15 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm ci
+        working-directory: ./vue-auto-deploy
+        run: npm install
 
       - name: Build project
+        working-directory: ./vue-auto-deploy
         run: npm run build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          publish_dir: ./vue-auto-deploy/dist
