@@ -7,7 +7,8 @@ import type { User } from '@supabase/supabase-js'
 interface UserProfile {
   id: string
   email: string
-  role: 'user' | 'admin'
+  role: 'user' | 'trainer' | 'admin'
+  trainer_id: string | null
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -17,6 +18,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!user.value)
   const isAdmin = computed(() => profile.value?.role === 'admin')
+  const isTrainer = computed(() => profile.value?.role === 'trainer')
+  const isTrainerOrAdmin = computed(() => 
+    profile.value?.role === 'trainer' || profile.value?.role === 'admin'
+  )
 
   // Cargar perfil del usuario
   async function loadProfile() {
@@ -93,8 +98,8 @@ export const useAuthStore = defineStore('auth', () => {
     profile.value = null
   }
 
-  // Actualizar rol (solo para testing, normalmente lo haría un admin desde Supabase)
-  async function updateRole(userId: string, newRole: 'user' | 'admin') {
+  // Actualizar rol
+  async function updateRole(userId: string, newRole: 'user' | 'trainer' | 'admin') {
     const { error } = await supabase
       .from('profiles')
       .update({ role: newRole })
@@ -112,6 +117,8 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     isAuthenticated,
     isAdmin,
+    isTrainer,
+    isTrainerOrAdmin,
     initialize,
     signUp,
     signIn,

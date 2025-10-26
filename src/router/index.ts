@@ -9,6 +9,9 @@ import TrainingView from '../views/TrainingView.vue'
 import AdminExercisesView from '../views/AdminExercisesView.vue'
 import ActiveTrainingView from '../views/ActiveTrainingView.vue'
 import HistoryView from '../views/HistoryView.vue'
+import TrainerTemplatesView from '../views/TrainerTemplatesView.vue'
+import TrainerTemplateEditView from '../views/TrainerTemplateEditView.vue'
+import TrainerStudentsView from '../views/TrainerStudentsView.vue'
 
 const routes = [
   {
@@ -59,6 +62,24 @@ const routes = [
     component: AdminExercisesView,
     meta: { requiresAuth: true, requiresAdmin: true }
   },
+  {
+    path: '/trainer/templates',
+    name: 'TrainerTemplates',
+    component: TrainerTemplatesView,
+    meta: { requiresAuth: true, requiresTrainer: true }
+  },
+  {
+    path: '/trainer/templates/:templateId',
+    name: 'TrainerTemplateEdit',
+    component: TrainerTemplateEditView,
+    meta: { requiresAuth: true, requiresTrainer: true }
+  },
+  {
+    path: '/trainer/students',
+    name: 'TrainerStudents',
+    component: TrainerStudentsView,
+    meta: { requiresAuth: true, requiresTrainer: true }
+  },
 ]
 
 const router = createRouter({
@@ -71,10 +92,10 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.meta.requiresAuth
   const requiresAdmin = to.meta.requiresAdmin
+  const requiresTrainer = to.meta.requiresTrainer
 
   // Esperar a que el auth store esté inicializado
   if (authStore.loading) {
-    // Si aún está cargando, esperamos un poco
     const checkAuth = setInterval(() => {
       if (!authStore.loading) {
         clearInterval(checkAuth)
@@ -93,6 +114,10 @@ router.beforeEach((to, from, next) => {
     } else if (requiresAdmin && !authStore.isAdmin) {
       // Redirigir al dashboard si la ruta requiere admin y no lo es
       alert('No tienes permisos de administrador para acceder a esta página')
+      next({ name: 'Dashboard' })
+    } else if (requiresTrainer && !authStore.isTrainerOrAdmin) {
+      // Redirigir al dashboard si la ruta requiere trainer y no lo es
+      alert('Necesitas ser entrenador para acceder a esta página')
       next({ name: 'Dashboard' })
     } else if ((to.name === 'Login' || to.name === 'Register') && authStore.isAuthenticated) {
       // Si ya está autenticado y va a login/register, redirigir a dashboard

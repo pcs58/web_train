@@ -241,7 +241,7 @@ export function useTraining() {
     }
   }
 
-  // NUEVAS FUNCIONES PARA SESIONES DE ENTRENAMIENTO
+  // FUNCIONES PARA SESIONES DE ENTRENAMIENTO
 
   // Crear sesión de entrenamiento
   async function createTrainingSession(userId: string, trainingDayId: string) {

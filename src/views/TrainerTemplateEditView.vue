@@ -1,97 +1,105 @@
-<!-- src/views/TrainingView.vue -->
+<!-- src/views/TrainerTemplateEditView.vue -->
 <template>
   <div class="page">
     <nav class="navbar">
       <div class="nav-container">
         <div class="nav-content">
-          <h1 class="logo">Mis Entrenamientos</h1>
-          <div class="nav-right">
-            <router-link to="/dashboard" class="nav-link">Dashboard</router-link>
-            <router-link to="/history" class="nav-link">Historial</router-link>
+          <div class="nav-left">
+            <button @click="$router.back()" class="btn-back">← Volver</button>
+            <h1 class="logo">{{ template?.name || 'Cargando...' }}</h1>
           </div>
+          <button @click="showInfo = true" class="btn btn-secondary btn-sm">
+            ℹ️ Info
+          </button>
         </div>
       </div>
     </nav>
 
     <main class="main-content">
       <div class="container">
-        <div v-if="loading && trainingDays.length === 0" class="loading">Cargando...</div>
+        <div v-if="loading && !template" class="loading">Cargando rutina...</div>
 
-        <div v-else-if="trainingDays.length === 0" class="empty-state">
-          <p>No tienes días de entrenamiento configurados aún.</p>
-          <button @click="showCreateDay = true" class="btn btn-primary">
-            Crear Primer Día
-          </button>
+        <div v-else-if="!template" class="empty-state">
+          <p>No se encontró la rutina</p>
         </div>
 
-        <div v-else class="days-grid">
-          <div v-for="day in trainingDays" :key="day.id" class="day-card">
-            <div class="day-header">
-              <div>
-                <h3 class="day-title">{{ day.day_name }}</h3>
-                <span class="day-number">Día {{ day.day_number }}</span>
-              </div>
-              <button @click="startTraining(day)" class="btn btn-success btn-sm">
-                ▶ Entrenar
-              </button>
-            </div>
+        <div v-else>
+          <div v-if="template.days.length === 0" class="empty-state">
+            <p>Esta rutina no tiene días configurados aún.</p>
+            <button @click="showCreateDay = true" class="btn btn-primary">
+              Crear Primer Día
+            </button>
+          </div>
 
-            <p v-if="day.description" class="day-description">{{ day.description }}</p>
-
-            <div class="exercises-list">
-              <div 
-                v-for="(dayEx, index) in day.exercises" 
-                :key="dayEx.id"
-                class="exercise-item"
-              >
-                <div class="exercise-order">
-                  <button 
-                    @click="moveExercise(day.id, dayEx.id, index, -1)"
-                    :disabled="index === 0"
-                    class="btn-order"
-                    title="Mover arriba"
-                  >↑</button>
-                  <span class="order-number">{{ index + 1 }}</span>
-                  <button 
-                    @click="moveExercise(day.id, dayEx.id, index, 1)"
-                    :disabled="index === day.exercises.length - 1"
-                    class="btn-order"
-                    title="Mover abajo"
-                  >↓</button>
+          <div v-else class="days-grid">
+            <div v-for="day in template.days" :key="day.id" class="day-card">
+              <div class="day-header">
+                <div>
+                  <h3 class="day-title">{{ day.day_name }}</h3>
+                  <span class="day-number">Día {{ day.day_number }}</span>
                 </div>
-
-                <div class="exercise-info" @click="openExerciseModal(dayEx.exercise)">
-                  <h4 class="exercise-name">{{ dayEx.exercise?.name }}</h4>
-                  <p class="exercise-details">
-                    {{ dayEx.sets }} series × {{ dayEx.reps }} reps
-                    <span v-if="dayEx.rest_seconds"> • {{ dayEx.rest_seconds }}s</span>
-                  </p>
-                </div>
-
-                <button 
-                  @click="removeExercise(dayEx.id, day.id)"
-                  class="btn-remove"
-                  title="Eliminar"
-                >
-                  ×
+                <button @click="deleteDayConfirm(day.id)" class="btn-icon btn-danger" title="Eliminar día">
+                  🗑️
                 </button>
               </div>
 
-              <button 
-                @click="openAddExerciseModal(day)" 
-                class="btn btn-secondary btn-full"
-              >
-                + Agregar Ejercicio
-              </button>
+              <p v-if="day.description" class="day-description">{{ day.description }}</p>
+
+              <div class="exercises-list">
+                <div 
+                  v-for="(dayEx, index) in day.exercises" 
+                  :key="dayEx.id"
+                  class="exercise-item"
+                >
+                  <div class="exercise-info" @click="openExerciseModal(dayEx.exercise)">
+                    <h4 class="exercise-name">{{ dayEx.exercise?.name }}</h4>
+                    <p class="exercise-details">
+                      {{ dayEx.sets }} series × {{ dayEx.reps }} reps
+                      <span v-if="dayEx.rest_seconds"> • {{ dayEx.rest_seconds }}s</span>
+                    </p>
+                  </div>
+
+                  <button 
+                    @click="removeExercise(dayEx.id)"
+                    class="btn-remove"
+                    title="Eliminar"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <button 
+                  @click="openAddExerciseModal(day)" 
+                  class="btn btn-secondary btn-full"
+                >
+                  + Agregar Ejercicio
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <button @click="showCreateDay = true" class="btn btn-primary btn-floating">
-          + Nuevo Día
-        </button>
+          <button @click="showCreateDay = true" class="btn btn-primary btn-floating">
+            + Nuevo Día
+          </button>
+        </div>
       </div>
     </main>
+
+    <!-- Modal info de rutina -->
+    <div v-if="showInfo" class="modal-overlay" @click="showInfo = false">
+      <div class="modal" @click.stop>
+        <h3 class="modal-title">Información de la Rutina</h3>
+        <div class="info-section">
+          <p><strong>Nombre:</strong> {{ template?.name }}</p>
+          <p v-if="template?.description"><strong>Descripción:</strong> {{ template?.description }}</p>
+          <p><strong>Días:</strong> {{ template?.days.length || 0 }}</p>
+          <p><strong>Total ejercicios:</strong> {{ totalExercises }}</p>
+        </div>
+        <button @click="showInfo = false" class="btn btn-primary btn-full">
+          Cerrar
+        </button>
+      </div>
+    </div>
 
     <!-- Modal crear día -->
     <div v-if="showCreateDay" class="modal-overlay" @click="showCreateDay = false">
@@ -125,51 +133,50 @@
       <div class="modal modal-large" @click.stop>
         <h3 class="modal-title">Agregar Ejercicio</h3>
         
-        <div class="exercise-search">
-          <input 
-            v-model="searchQuery" 
-            type="text" 
-            placeholder="Buscar ejercicio..."
-            class="input"
-          />
-        </div>
-        
         <div class="tabs">
           <button 
-            :class="['tab', { active: exerciseTab === 'all' }]"
-            @click="exerciseTab = 'all'"
+            :class="['tab', { active: exerciseTab === 'existing' }]"
+            @click="exerciseTab = 'existing'"
           >
-            Todos ({{ filteredExercises.length }})
+            Ejercicios Existentes
           </button>
           <button 
             :class="['tab', { active: exerciseTab === 'create' }]"
             @click="exerciseTab = 'create'"
           >
-            + Crear Personal
+            Crear Nuevo (Entrenador)
           </button>
         </div>
 
-        <div v-if="exerciseTab === 'all'" class="exercise-list-modal">
-          <div 
-            v-for="ex in filteredExercises" 
-            :key="ex.id"
-            @click="selectExercise(ex)"
-            class="exercise-list-item"
-          >
-            <div>
-              <p class="ex-name">{{ ex.name }}</p>
-              <p class="ex-meta">
-                {{ ex.muscle_group }} • {{ ex.difficulty }}
-                <span v-if="ex.scope !== 'global'" :class="['badge-scope', `badge-${ex.scope}`]">
-                  {{ ex.scope === 'personal' ? 'Personal' : 'Entrenador' }}
-                </span>
-              </p>
+        <div v-if="exerciseTab === 'existing'">
+          <div class="exercise-search">
+            <input 
+              v-model="searchQuery" 
+              type="text" 
+              placeholder="Buscar ejercicio..."
+              class="input"
+            />
+          </div>
+          <div class="exercise-list-modal">
+            <div 
+              v-for="ex in filteredExercises" 
+              :key="ex.id"
+              @click="selectExercise(ex)"
+              class="exercise-list-item"
+            >
+              <div>
+                <p class="ex-name">{{ ex.name }}</p>
+                <p class="ex-meta">
+                  {{ ex.muscle_group }} • {{ ex.difficulty }}
+                  <span v-if="ex.scope !== 'global'" class="badge-scope">{{ ex.scope }}</span>
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         <div v-else>
-          <form @submit.prevent="handleCreatePersonalExercise">
+          <form @submit.prevent="handleCreateTrainerExercise">
             <div class="form-group">
               <label class="label">Nombre del ejercicio *</label>
               <input v-model="newExercise.name" type="text" required class="input" />
@@ -265,39 +272,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useTraining } from '../composables/useTraining'
 import { useTrainer } from '../composables/useTrainer'
-import type { TrainingDayWithExercises, Exercise, TrainingDay } from '../types/training'
+import { useTraining } from '../composables/useTraining'
+import type { TrainingTemplateComplete, TemplateDay, Exercise } from '../types/training'
 
-const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const { 
-  loading, 
-  getTrainingDays, 
-  createTrainingDay, 
-  addExerciseToDay,
-  removeExerciseFromDay,
-  updateExerciseOrder
-} = useTraining()
-
-const {
-  getAvailableExercises,
-  createPersonalExercise
+  getTemplateComplete, 
+  createTemplateDay, 
+  addExerciseToTemplateDay,
+  createTrainerExercise,
+  deleteTemplateDay,
+  removeExerciseFromTemplateDay,
+  getAvailableExercises
 } = useTrainer()
+const { getAllExercises } = useTraining()
 
-const trainingDays = ref<TrainingDayWithExercises[]>([])
+const loading = ref(false)
+const template = ref<TrainingTemplateComplete | null>(null)
 const allExercises = ref<Exercise[]>([])
+const showInfo = ref(false)
 const showCreateDay = ref(false)
 const showAddExercise = ref(false)
 const showConfigExercise = ref(false)
 const selectedExercise = ref<Exercise | null>(null)
 const selectedExForAdd = ref<Exercise | null>(null)
-const selectedDay = ref<TrainingDay | null>(null)
+const selectedDay = ref<TemplateDay | null>(null)
 const searchQuery = ref('')
-const exerciseTab = ref<'all' | 'create'>('all')
+const exerciseTab = ref<'existing' | 'create'>('existing')
 
 const newDay = ref({
   dayNumber: 1,
@@ -318,6 +324,10 @@ const exerciseConfig = ref({
   rest: 60
 })
 
+const totalExercises = computed(() => {
+  return template.value?.days.reduce((sum, day) => sum + day.exercises.length, 0) || 0
+})
+
 const filteredExercises = computed(() => {
   if (!searchQuery.value) return allExercises.value
   const query = searchQuery.value.toLowerCase()
@@ -327,31 +337,30 @@ const filteredExercises = computed(() => {
   )
 })
 
-watch(() => authStore.isAuthenticated, (isAuth) => {
-  if (isAuth && authStore.user) {
-    loadTrainingDays()
-    loadAllExercises()
-  }
-}, { immediate: true })
+onMounted(async () => {
+  const templateId = route.params.templateId as string
+  await loadTemplate(templateId)
+  await loadExercises()
+})
 
-async function loadTrainingDays() {
-  if (!authStore.user) return
-  trainingDays.value = await getTrainingDays(authStore.user.id)
+async function loadTemplate(templateId: string) {
+  loading.value = true
+  template.value = await getTemplateComplete(templateId)
+  loading.value = false
 }
 
-async function loadAllExercises() {
+async function loadExercises() {
   if (!authStore.user) return
-  // Cargar ejercicios disponibles según el alcance
-  const trainerId = authStore.profile?.trainer_id
-  allExercises.value = await getAvailableExercises(authStore.user.id, trainerId || undefined)
+  // Cargar ejercicios disponibles (globales + del entrenador)
+  allExercises.value = await getAvailableExercises(authStore.user.id, authStore.user.id)
 }
 
 async function handleCreateDay() {
-  if (!authStore.user) return
+  if (!template.value) return
   
   try {
-    await createTrainingDay(
-      authStore.user.id,
+    await createTemplateDay(
+      template.value.id,
       newDay.value.dayNumber,
       newDay.value.name,
       newDay.value.description
@@ -359,16 +368,16 @@ async function handleCreateDay() {
     
     showCreateDay.value = false
     newDay.value = { dayNumber: 1, name: '', description: '' }
-    await loadTrainingDays()
+    await loadTemplate(template.value.id)
   } catch (error) {
     console.error('Error:', error)
   }
 }
 
-function openAddExerciseModal(day: TrainingDay) {
+function openAddExerciseModal(day: TemplateDay) {
   selectedDay.value = day
   searchQuery.value = ''
-  exerciseTab.value = 'all'
+  exerciseTab.value = 'existing'
   showAddExercise.value = true
 }
 
@@ -378,11 +387,11 @@ function selectExercise(exercise: Exercise) {
   showConfigExercise.value = true
 }
 
-async function handleCreatePersonalExercise() {
+async function handleCreateTrainerExercise() {
   if (!authStore.user) return
   
   try {
-    const exercise = await createPersonalExercise(authStore.user.id, {
+    const exercise = await createTrainerExercise(authStore.user.id, {
       name: newExercise.value.name,
       muscle_group: newExercise.value.muscle_group || null,
       difficulty: (newExercise.value.difficulty as any) || null,
@@ -394,20 +403,20 @@ async function handleCreatePersonalExercise() {
     showAddExercise.value = false
     showConfigExercise.value = true
     newExercise.value = { name: '', muscle_group: '', difficulty: '', instructions: '' }
-    await loadAllExercises()
+    await loadExercises()
   } catch (error) {
     console.error('Error:', error)
   }
 }
 
 async function handleAddExercise() {
-  if (!selectedExForAdd.value || !selectedDay.value) return
+  if (!selectedExForAdd.value || !selectedDay.value || !template.value) return
   
   try {
-    const currentDay = trainingDays.value.find(d => d.id === selectedDay.value!.id)
+    const currentDay = template.value.days.find(d => d.id === selectedDay.value!.id)
     const nextOrder = currentDay ? currentDay.exercises.length : 0
     
-    await addExerciseToDay(
+    await addExerciseToTemplateDay(
       selectedDay.value.id,
       selectedExForAdd.value.id,
       exerciseConfig.value.sets,
@@ -419,41 +428,29 @@ async function handleAddExercise() {
     showConfigExercise.value = false
     selectedExForAdd.value = null
     exerciseConfig.value = { sets: 3, reps: '10-12', rest: 60 }
-    await loadTrainingDays()
+    await loadTemplate(template.value.id)
   } catch (error) {
     console.error('Error:', error)
   }
 }
 
-async function removeExercise(dayExerciseId: string, dayId: string) {
-  if (!confirm('¿Eliminar este ejercicio del día?')) return
+async function removeExercise(templateDayExerciseId: string) {
+  if (!confirm('¿Eliminar este ejercicio del día?') || !template.value) return
   
   try {
-    await removeExerciseFromDay(dayExerciseId)
-    await loadTrainingDays()
+    await removeExerciseFromTemplateDay(templateDayExerciseId)
+    await loadTemplate(template.value.id)
   } catch (error) {
     console.error('Error:', error)
   }
 }
 
-async function moveExercise(dayId: string, dayExerciseId: string, currentIndex: number, direction: number) {
-  const day = trainingDays.value.find(d => d.id === dayId)
-  if (!day || !day.exercises) return
-  
-  const newIndex = currentIndex + direction
-  if (newIndex < 0 || newIndex >= day.exercises.length) return
-  
-  const otherExercise = day.exercises[newIndex]
-  if (!otherExercise || !otherExercise.id) return
+async function deleteDayConfirm(templateDayId: string) {
+  if (!confirm('¿Eliminar este día completo?') || !template.value) return
   
   try {
-    // Actualizar el orden del ejercicio actual
-    await updateExerciseOrder(dayExerciseId, newIndex)
-    
-    // Actualizar el orden del ejercicio que se intercambia
-    await updateExerciseOrder(otherExercise.id, currentIndex)
-    
-    await loadTrainingDays()
+    await deleteTemplateDay(templateDayId)
+    await loadTemplate(template.value.id)
   } catch (error) {
     console.error('Error:', error)
   }
@@ -464,17 +461,10 @@ function openExerciseModal(exercise: Exercise | undefined) {
     selectedExercise.value = exercise
   }
 }
-
-function startTraining(day: TrainingDayWithExercises) {
-  router.push({
-    name: 'ActiveTraining',
-    params: { dayId: day.id }
-  })
-}
 </script>
 
 <style scoped>
-/* Estilos completos... */
+/* Reutilizamos los estilos de TrainingView */
 .page {
   min-height: 100vh;
   background: #f9fafb;
@@ -498,29 +488,32 @@ function startTraining(day: TrainingDayWithExercises) {
   height: 4rem;
 }
 
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-back {
+  background: none;
+  border: none;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: background 0.2s;
+}
+
+.btn-back:hover {
+  background: #f3f4f6;
+}
+
 .logo {
   font-size: 1.25rem;
   font-weight: bold;
   color: #111827;
   margin: 0;
-}
-
-.nav-right {
-  display: flex;
-  gap: 1rem;
-}
-
-.nav-link {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  color: #374151;
-  text-decoration: none;
-  border-radius: 0.375rem;
-  transition: background 0.2s;
-}
-
-.nav-link:hover {
-  background: #f3f4f6;
 }
 
 .main-content {
@@ -594,39 +587,6 @@ function startTraining(day: TrainingDayWithExercises) {
   border-radius: 0.375rem;
 }
 
-.exercise-order {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.btn-order {
-  background: white;
-  border: 1px solid #d1d5db;
-  padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
-  cursor: pointer;
-  border-radius: 0.25rem;
-  color: #6b7280;
-}
-
-.btn-order:hover:not(:disabled) {
-  background: #f3f4f6;
-  color: #111827;
-}
-
-.btn-order:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.order-number {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #9ca3af;
-  text-align: center;
-}
-
 .exercise-info {
   flex: 1;
   cursor: pointer;
@@ -698,15 +658,6 @@ function startTraining(day: TrainingDayWithExercises) {
   background: #d1d5db;
 }
 
-.btn-success {
-  background: #16a34a;
-  color: white;
-}
-
-.btn-success:hover {
-  background: #15803d;
-}
-
 .btn-full {
   width: 100%;
   margin-top: 0.5rem;
@@ -720,6 +671,24 @@ function startTraining(day: TrainingDayWithExercises) {
   font-size: 1rem;
   border-radius: 2rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  font-size: 1.125rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: background 0.2s;
+}
+
+.btn-icon:hover {
+  background: #f3f4f6;
+}
+
+.btn-icon.btn-danger:hover {
+  background: #fee2e2;
 }
 
 .modal-overlay {
@@ -777,6 +746,18 @@ function startTraining(day: TrainingDayWithExercises) {
   margin: 0 0 1.5rem;
 }
 
+.info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-section p {
+  margin: 0;
+  color: #374151;
+}
+
 .form-group {
   margin-bottom: 1rem;
 }
@@ -816,14 +797,10 @@ textarea.input {
   justify-content: flex-end;
 }
 
-.exercise-search {
-  margin-bottom: 1rem;
-}
-
 .tabs {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -846,6 +823,10 @@ textarea.input {
 .tab.active {
   color: #2563eb;
   border-bottom-color: #2563eb;
+}
+
+.exercise-search {
+  margin-bottom: 1rem;
 }
 
 .exercise-list-modal {
@@ -883,21 +864,12 @@ textarea.input {
 }
 
 .badge-scope {
+  background: #fef3c7;
+  color: #92400e;
   padding: 0.125rem 0.5rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
   margin-left: 0.5rem;
-  font-weight: 500;
-}
-
-.badge-personal {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.badge-trainer {
-  background: #fef3c7;
-  color: #92400e;
 }
 
 .exercise-detail {
