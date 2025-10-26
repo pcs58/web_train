@@ -20,7 +20,7 @@
         </button>
       </div>
 
-      <div v-else-if="currentExerciseIndex < exercises.length" class="exercise-screen">
+      <div v-else-if="currentExercise && currentExerciseIndex < exercises.length" class="exercise-screen">
         <div class="progress-bar">
           <div 
             class="progress-fill" 
@@ -28,24 +28,24 @@
           ></div>
         </div>
 
-        <div class="exercise-info-card">
+                  <div class="exercise-info-card">
           <div class="exercise-header">
             <span class="exercise-number">{{ currentExerciseIndex + 1 }} / {{ exercises.length }}</span>
-            <h2 class="current-exercise-name">{{ currentExercise.exercise?.name }}</h2>
+            <h2 class="current-exercise-name">{{ currentExercise?.exercise?.name }}</h2>
           </div>
 
           <div class="exercise-stats">
             <div class="stat">
               <span class="stat-label">Series</span>
-              <span class="stat-value">{{ currentSet }} / {{ currentExercise.sets }}</span>
+              <span class="stat-value">{{ currentSet }} / {{ currentExercise?.sets || 0 }}</span>
             </div>
             <div class="stat">
               <span class="stat-label">Objetivo</span>
-              <span class="stat-value">{{ currentExercise.reps }} reps</span>
+              <span class="stat-value">{{ currentExercise?.reps || '-' }} reps</span>
             </div>
             <div class="stat">
               <span class="stat-label">Descanso</span>
-              <span class="stat-value">{{ currentExercise.rest_seconds }}s</span>
+              <span class="stat-value">{{ currentExercise?.rest_seconds || 0 }}s</span>
             </div>
           </div>
 
@@ -146,22 +146,22 @@
     </main>
 
     <!-- Modal de instrucciones -->
-    <div v-if="showExerciseInfo" class="modal-overlay" @click="showExerciseInfo = false">
+    <div v-if="showExerciseInfo && currentExercise" class="modal-overlay" @click="showExerciseInfo = false">
       <div class="modal" @click.stop>
         <button class="modal-close" @click="showExerciseInfo = false">×</button>
-        <h3 class="modal-title">{{ currentExercise.exercise?.name }}</h3>
+        <h3 class="modal-title">{{ currentExercise?.exercise?.name }}</h3>
         <div class="exercise-detail">
           <div class="detail-section">
             <p class="detail-label">Grupo muscular</p>
-            <p class="detail-value">{{ currentExercise.exercise?.muscle_group }}</p>
+            <p class="detail-value">{{ currentExercise?.exercise?.muscle_group || 'No especificado' }}</p>
           </div>
-          <div class="detail-section" v-if="currentExercise.exercise?.description">
+          <div class="detail-section" v-if="currentExercise?.exercise?.description">
             <p class="detail-label">Descripción</p>
-            <p class="detail-value">{{ currentExercise.exercise?.description }}</p>
+            <p class="detail-value">{{ currentExercise?.exercise?.description }}</p>
           </div>
-          <div class="detail-section" v-if="currentExercise.exercise?.instructions">
+          <div class="detail-section" v-if="currentExercise?.exercise?.instructions">
             <p class="detail-label">Instrucciones</p>
-            <p class="detail-value">{{ currentExercise.exercise?.instructions }}</p>
+            <p class="detail-value">{{ currentExercise?.exercise?.instructions }}</p>
           </div>
         </div>
       </div>
@@ -212,12 +212,15 @@ const setData = ref({
   reps: null as number | null
 })
 
-const currentExercise = computed(() => exercises.value[currentExerciseIndex.value])
+const currentExercise = computed(() => {
+  if (currentExerciseIndex.value >= exercises.value.length) return null
+  return exercises.value[currentExerciseIndex.value]
+})
 
 const currentExerciseSets = computed(() => {
   if (!currentExercise.value) return []
   return allCompletedSets.value.filter(
-    set => set.day_exercise_id === currentExercise.value.id
+    set => set.day_exercise_id === currentExercise.value!.id
   )
 })
 
