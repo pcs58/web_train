@@ -338,17 +338,19 @@ async function removeExercise(dayExerciseId: string, dayId: string) {
 
 async function moveExercise(dayId: string, dayExerciseId: string, currentIndex: number, direction: number) {
   const day = trainingDays.value.find(d => d.id === dayId)
-  if (!day) return
+  if (!day || !day.exercises) return
   
   const newIndex = currentIndex + direction
   if (newIndex < 0 || newIndex >= day.exercises.length) return
+  
+  const otherExercise = day.exercises[newIndex]
+  if (!otherExercise || !otherExercise.id) return
   
   try {
     // Actualizar el orden del ejercicio actual
     await updateExerciseOrder(dayExerciseId, newIndex)
     
     // Actualizar el orden del ejercicio que se intercambia
-    const otherExercise = day.exercises[newIndex]
     await updateExerciseOrder(otherExercise.id, currentIndex)
     
     await loadTrainingDays()
