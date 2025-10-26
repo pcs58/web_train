@@ -246,11 +246,11 @@ function closeModal() {
 
 async function handleSubmit() {
   try {
-    const exerciseData = {
+    const exerciseData: Partial<Exercise> = {
       name: form.value.name,
       description: form.value.description || null,
       muscle_group: form.value.muscle_group || null,
-      difficulty: form.value.difficulty || null,
+      difficulty: (form.value.difficulty as 'principiante' | 'intermedio' | 'avanzado' | '') || null,
       instructions: form.value.instructions || null,
       video_url: form.value.video_url || null,
       image_url: form.value.image_url || null,
